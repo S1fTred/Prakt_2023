@@ -58,7 +58,7 @@ while running:
             # нажали на q - quit
             if event.key == pg.K_q:
                 running = False
-        # движение игрока
+        # движ игрока
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_a or event.key == pg.K_LEFT:
                 player_dx = -player_velocity
