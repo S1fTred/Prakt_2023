@@ -20,6 +20,7 @@ sys_font = pg.font.SysFont('arial', 34)
 font = pg.font.Font('src/04B_19.TTF', 48)
 font_big = pg.font.Font('src/04B_19.TTF', 72)
 
+display.blit(bg_img, (0, 0))
 # # display.fill('blue', (0, 0, screen_width, screen_height))
 # display.blit(bg_img, (0, 0))        # image.tr
 #
@@ -38,15 +39,15 @@ player_velocity = 10
 player_dx = 0
 player_x = screen_width/2 - player_width/2
 player_y = screen_height - player_height - player_gap
-player_alive = True
+player_live = True
 
 #bullet
 bullet_img = pg.image.load('src/bullet.png')
 bullet_width, bullet_height = bullet_img.get_size()
 bullet_dy = -10
-bullet_x = player_x - player_width / 4     # микро дз - пускать из середины
+bullet_x = player_x + player_width / 4     # микро дз - пускать из середины
 bullet_y = player_y - bullet_height
-bullet_alive = False    # есть пуля?
+bullet_live = False    # есть пуля?
 
 #enemy
 enemy_img = pg.image.load('src/enemy.png')
@@ -60,51 +61,71 @@ enemy_y = 0
 score = 0
 game_over = False
 paused = False
-# pause_img = pg.image.load('')
-# pause_w, pause_h = pause_img.get_size()
+pause_img = pg.image.load('src/pause-icon-30.png')
+pause_w, pause_h = pause_img.get_size()
 
-def model_update():
+def update_model():
     if paused == False:
-        player_model()
-        bullet_model()
-        enemy_model()
+        model_player()
+        model_bullet()
+        model_enemy()
 
-def enemy_create():
+def redraw_display():
+    if player_live == True:
+        display.blit(bg_img, (0, 0))
+        display.blit(player_img, (player_x, player_y))
+        display.blit(enemy_img, (enemy_x, enemy_y))
+        if bullet_live:
+            display.blit(bullet_img, (bullet_x, bullet_y))
+        write_score()
+        menu_game_over()
+        pg.display.update()
+    else:
+        display.blit(bg_img, (0, 0))
+        menu_game_over()
+        write_score()
+        pg.display.update()
+    if paused == True:
+        display.blit(pause_img, (screen_width / 2 - pause_w / 2, screen_height / 2 - pause_h / 2))
+        pg.display.update()
+
+def create_enemy():
     global enemy_y, enemy_x
     enemy_x = random.randint(0, screen_width - enemy_width)
     enemy_y = 0
     print(f"CREATE{enemy_x = }")
 
-def enemy_model():
+def model_enemy():
     """ Изменение положения противника, рассчет поражений."""
-    global enemy_y, enemy_x, bullet_alive, player_alive, score
-    if player_alive:
+    global enemy_y, enemy_x, bullet_live, player_live, score
+    if player_live:
         enemy_x += enemy_dx
         enemy_y += enemy_dy
     if enemy_y > screen_height:
-        enemy_create()
+        create_enemy()
 
     # пересечение с пулей
-    if bullet_alive:
+    if bullet_live:
         re = pg.Rect(enemy_x, enemy_y, enemy_width, enemy_height)
         rb = pg.Rect(bullet_x, bullet_y, bullet_width, bullet_height)
         is_crossed = re.colliderect(rb)
         # попал!
         if is_crossed:
             print('BANG!')
-            enemy_create()
-            bullet_alive = False
+            score += 1
+            create_enemy()
+            bullet_live = False
 
     # пересечение с игроком
-    if player_alive:
+    if player_live:
         pr = pg.Rect(enemy_x, enemy_y, enemy_width, enemy_height)
         rp = pg.Rect(player_x, player_y, player_width, player_height)
-        pereseklis = pr.colliderect(rp)
-        if pereseklis:
+        peresek = pr.colliderect(rp)
+        if peresek:
             print('Game over')
-            player_alive = False
-def player_model():
-    if player_alive == True:
+            player_live = False
+def model_player():
+    if player_live == True:
         global player_x
         player_x += player_dx
         if player_x < 0:
@@ -112,50 +133,55 @@ def player_model():
         elif player_x > screen_width - player_width:
             player_x = screen_width - player_width
 
-def bullet_model():
-    """ Изменяется положение пули.
-    """
-    global bullet_y, bullet_alive
+def model_bullet():
+    global bullet_y, bullet_live
     bullet_y += bullet_dy
     # пуля улетела за верх экрана
     if bullet_y < 0:
-        bullet_alive = False
+        bullet_live = False
 
-def bullet_create():
-    global bullet_y, bullet_x, bullet_alive
-    if player_alive:
-        bullet_alive = True
-        bullet_x = player_x - player_width / 10  # микро дз - пускать из середины
+def create_bullet():
+    global bullet_y, bullet_x, bullet_live
+    if player_live:
+        bullet_live = True
+        bullet_x = player_x + player_width / 4  # микро дз - пускать из середины
         bullet_y = player_y - bullet_height
+
+def write_score():
+    text_score = font.render("Score: " + str(score), True, 'yellow')
+    w_gs, h_gs = text_score.get_size()
+    if player_live:
+        display.blit(text_score,(600,10))
+    elif not player_live:
+        display.blit(text_score, (screen_width / 2 - w_gs / 2, (screen_height / 2) + h_gs * 1.5))
 
 def menu_game_over():
     global game_over
-    if not player_alive:
+    if not player_live:
         text_game_over = font_big.render('Game over', True, 'yellow')
         w_go, h_go = text_game_over.get_size()
         display.blit(text_game_over, (screen_width / 2 - w_go / 2, screen_height / 2 - h_go / 2))
         game_over = True
 
-def display_redraw():
-    display.blit(bg_img, (0, 0))
-    display.blit(player_img, (player_x, player_y))
-    display.blit(enemy_img, (enemy_x, enemy_y))
-    if bullet_alive:
-        display.blit(bullet_img, (bullet_x, bullet_y))
-    pg.display.update()
-
 def event_processing():
-    global player_dx
+    global player_dx, paused, game_over, player_live, score
     running = True
     for event in pg.event.get():
-        # нажали крестик на окне
-        if event.type == pg.QUIT:
+        if event.type == pg.QUIT or event.type == pg.KEYDOWN and event.key == pg.K_q:
             running = False
-        # тут нажимаем на клавиши
-        if event.type == pg.KEYDOWN:
-            # нажали на q - quit
-            if event.key == pg.K_q:
-                running = False
+        if event.type == pg.KEYDOWN and event.key == pg.K_p:
+            paused = not paused
+        if event.type == pg.KEYDOWN and event.key == pg.K_r:
+            game_over = False
+            player_live = True
+            score = 0
+            create_enemy()
+            running = True
+            while running:
+                running = event_processing()
+                update_model()
+                redraw_display()
+
         # движение игрока
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_a or event.key == pg.K_LEFT:
@@ -165,23 +191,24 @@ def event_processing():
         if event.type == pg.KEYUP:
             player_dx = 0
 
-        # по левому клику мыши стреляем
+
+        # по клику мыши стреляем
         if event.type == pg.MOUSEBUTTONDOWN:
-            key = pg.mouse.get_pressed()    # key[0] - left, key[2] - right
-            print(f'{key[0]=} {bullet_alive=}')
-            if not bullet_alive:
-                bullet_create()
+            key = pg.mouse.get_pressed()
+            print(f'{key[0]=} {bullet_live=}')
+            if not bullet_live:
+                create_bullet()
 
 
     clock.tick(FPS)
     return running
 
 
-enemy_create()
+create_enemy()
 running = True
 while running:
-    model_update()
-    display_redraw()
+    update_model()
+    redraw_display()
     running = event_processing()
 
 pg.quit()
