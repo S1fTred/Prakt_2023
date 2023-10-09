@@ -29,51 +29,89 @@ game_over_text = font.render('Game Over', True, 'red')
 w, h = game_over_text.get_size()
 # display.blit(game_over_text, (screen_width/2 - w/2, screen_height / 2 - h/2))
 
-# игрок
+#player
 player_img = pg.image.load('src/player.png')
 player_width, player_height = player_img.get_size()
 player_gap = 10
 player_velocity = 10
 player_dx = 0
 player_x = screen_width/2 - player_width/2
-player_y = screen_height  - player_height - player_gap
+player_y = screen_height - player_height - player_gap
+player_alive = True
 
-# пуля
+#bullet
 bullet_img = pg.image.load('src/bullet.png')
 bullet_width, bullet_height = bullet_img.get_size()
-bullet_dy = -5
-bullet_x = 0     # микро дз - пускать из середины
-bullet_y = 0
+bullet_dy = -10
+bullet_x = player_x - player_width / 4     # микро дз - пускать из середины
+bullet_y = player_y - bullet_height
 bullet_alive = False    # есть пуля?
 
-# противник
+#enemy
 enemy_img = pg.image.load('src/enemy.png')
 enemy_width, enemy_height = enemy_img.get_size()
 enemy_dx = 0
-enemy_dy = 1
+enemy_dy = 5
 enemy_x = 0
 enemy_y = 0
 
+#score
+score = 0
+game_over = False
+paused = False
+# pause_img = pg.image.load('')
+# pause_w, pause_h = pause_img.get_size()
+
+def model_update():
+    if paused == False:
+        player_model()
+        bullet_model()
+        enemy_model()
+
 def enemy_create():
     global enemy_y, enemy_x
-    enemy_x = random.randint(0, screen_width - enemy_width) # screen_width / 2 - enemy_width / 2
+    enemy_x = random.randint(0, screen_width - enemy_width)
     enemy_y = 0
     print(f"CREATE{enemy_x = }")
 
-def model_update():
-    palayer_model()
-    bullet_model()
-    enemy_model()
+def enemy_model():
+    """ Изменение положения противника, рассчет поражений."""
+    global enemy_y, enemy_x, bullet_alive, player_alive, score
+    if player_alive:
+        enemy_x += enemy_dx
+        enemy_y += enemy_dy
+    if enemy_y > screen_height:
+        enemy_create()
 
-def palayer_model():
-    x = 7   # создание переменной и ее инициализация
-    x = 7   # изменение значения уже созданной переменнной
-    global player_x
-    player_x += player_dx
-    if player_x < 0:
-        player_x = 0
-    elif player_x > screen_width - player_width:
-        player_x = screen_width - player_width
+    # пересечение с пулей
+    if bullet_alive:
+        re = pg.Rect(enemy_x, enemy_y, enemy_width, enemy_height)
+        rb = pg.Rect(bullet_x, bullet_y, bullet_width, bullet_height)
+        is_crossed = re.colliderect(rb)
+        # попал!
+        if is_crossed:
+            print('BANG!')
+            enemy_create()
+            bullet_alive = False
+
+    # пересечение с игроком
+    if player_alive:
+        pr = pg.Rect(enemy_x, enemy_y, enemy_width, enemy_height)
+        rp = pg.Rect(player_x, player_y, player_width, player_height)
+        pereseklis = pr.colliderect(rp)
+        if pereseklis:
+            print('Game over')
+        player_alive = False
+def player_model():
+    #x = 7    создание переменной и ее инициализация
+    #x = 7    изменение значения уже созданной переменнной
+    if player_alive == True:
+        global player_x
+        player_x += player_dx
+        if player_x < 0:
+            player_x = 0
+        elif player_x > screen_width - player_width:
+            player_x = screen_width - player_width
 
 def bullet_model():
     """ Изменяется положение пули.
@@ -90,25 +128,6 @@ def bullet_create():
     bullet_x = player_x  # микро дз - пускать из середины
     bullet_y = player_y - bullet_height
 
-def enemy_model():
-    """ Изменение положения противника, рассчет поражений."""
-    global enemy_y, enemy_x, bullet_alive
-
-    enemy_x += enemy_dx
-    enemy_y += enemy_dy
-    if enemy_y > screen_height:
-        enemy_create()
-
-    # пересечение с пулей
-    if bullet_alive:
-        re = pg.Rect(enemy_x, enemy_y, enemy_width, enemy_height)
-        rb = pg.Rect(bullet_x, bullet_y, bullet_width, bullet_height)
-        is_crossed = re.colliderect(rb)
-        # попал!
-        if is_crossed:
-            print('BANG!')
-            enemy_create()
-            bullet_alive = False
 
 def display_redraw():
     display.blit(bg_img, (0, 0))
