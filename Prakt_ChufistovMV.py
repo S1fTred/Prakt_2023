@@ -18,16 +18,17 @@ pg.display.set_caption('Космическое вторжение')
 
 sys_font = pg.font.SysFont('arial', 34)
 font = pg.font.Font('src/04B_19.TTF', 48)
+font_big = pg.font.Font('src/04B_19.TTF', 72)
 
-# display.fill('blue', (0, 0, screen_width, screen_height))
-display.blit(bg_img, (0, 0))        # image.tr
-
-text_img = sys_font.render('Score 123', True, 'white')
-# display.blit(text_img, (100, 50))
-
-game_over_text = font.render('Game Over', True, 'red')
-w, h = game_over_text.get_size()
-# display.blit(game_over_text, (screen_width/2 - w/2, screen_height / 2 - h/2))
+# # display.fill('blue', (0, 0, screen_width, screen_height))
+# display.blit(bg_img, (0, 0))        # image.tr
+#
+# text_img = sys_font.render('Score 123', True, 'white')
+# # display.blit(text_img, (100, 50))
+#
+# game_over_text = font.render('Game Over', True, 'red')
+# w, h = game_over_text.get_size()
+# # display.blit(game_over_text, (screen_width/2 - w/2, screen_height / 2 - h/2))
 
 #player
 player_img = pg.image.load('src/player.png')
@@ -101,10 +102,8 @@ def enemy_model():
         pereseklis = pr.colliderect(rp)
         if pereseklis:
             print('Game over')
-        player_alive = False
+            player_alive = False
 def player_model():
-    #x = 7    создание переменной и ее инициализация
-    #x = 7    изменение значения уже созданной переменнной
     if player_alive == True:
         global player_x
         player_x += player_dx
@@ -124,10 +123,18 @@ def bullet_model():
 
 def bullet_create():
     global bullet_y, bullet_x, bullet_alive
-    bullet_alive = True
-    bullet_x = player_x  # микро дз - пускать из середины
-    bullet_y = player_y - bullet_height
+    if player_alive:
+        bullet_alive = True
+        bullet_x = player_x - player_width / 10  # микро дз - пускать из середины
+        bullet_y = player_y - bullet_height
 
+def menu_game_over():
+    global game_over
+    if not player_alive:
+        text_game_over = font_big.render('Game over', True, 'yellow')
+        w_go, h_go = text_game_over.get_size()
+        display.blit(text_game_over, (screen_width / 2 - w_go / 2, screen_height / 2 - h_go / 2))
+        game_over = True
 
 def display_redraw():
     display.blit(bg_img, (0, 0))
